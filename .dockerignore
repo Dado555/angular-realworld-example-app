@@ -1,0 +1,35 @@
+# Dependencies and build output are regenerated inside the image; shipping the
+# host's copies would bloat the build context and risk stale/host-specific artifacts.
+node_modules
+dist
+
+# VCS metadata is not needed for `ng build`. Excluding .git also drops the nested
+# submodule git bookkeeping (realworld/.git). HUSKY=0 in the Dockerfile means the
+# husky "prepare" script no-ops even without a .git directory present (F13).
+.git
+.github
+.husky
+
+# Angular's local build cache -- safe to drop, regenerated on demand.
+.angular
+
+# Test tooling and artifacts -- irrelevant to the production bundle.
+playwright-report
+test-results
+coverage
+
+# Editor/OS cruft.
+.vscode
+.idea
+*.log
+Thumbs.db
+.DS_Store
+
+# Docs -- irrelevant to the build.
+CODE_OF_CONDUCT.md
+README.md
+LICENSE
+
+# IMPORTANT: do NOT exclude `realworld/` -- the populated git submodule is required
+# by `ng build` (global styles/assets are sourced from realworld/assets, see
+# angular.json). A missing or empty submodule here produces a silently broken build.

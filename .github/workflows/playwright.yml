@@ -1,10 +1,12 @@
 name: Playwright Tests
 
+# step 8.2 decision checkpoint: E2E is slow (60min timeout), so this runs
+# nightly plus on-demand rather than on every push/PR - ci.yml's own
+# format/typecheck/unit-test/build/trivy gates already cover every PR.
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
 
 jobs:
   test:

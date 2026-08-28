@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  HUSKY: "0"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: setup bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: install dependencies
+        run: bun install --frozen-lockfile
+
+      # cheapest and most likely to fail first
+      - name: format check
+        run: bun run format:check
+
+      - name: typecheck
+        run: bun run typecheck
+
+      # vitest run, never bare vitest - a bare `vitest` watches and never exits in CI
+      - name: unit tests
+        run: bun run test:ci
+
+      # production configuration is angular.json's default build target - this
+      # is what actually enforces the bundle budgets (angular.json: initial
+      # 500kb warning / 1mb error)
+      - name: build
+        run: bun run build
+
+      - name: short sha
+        id: sha
+        run: echo "value=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: docker build
+        run: docker build -t realworld-frontend:${{ steps.sha.outputs.value }} .
+
+      # no .trivyignore needed here - the frontend's only CRITICAL findings
+      # were base-alpine packages, cleared by the Dockerfile's own `apk upgrade`
+      - name: trivy scan
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy image \
+            --severity CRITICAL --ignore-unfixed --exit-code 1 \
+            realworld-frontend:${{ steps.sha.outputs.value }}
+
+      # everything above runs on every PR too. nothing below this line runs
+      # anywhere except a real push to main - no AWS credentials are ever
+      # loaded for a PR-triggered run, fork or otherwise.
+      - name: configure aws credentials
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: login to ecr
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: push to ecr
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          docker tag realworld-frontend:${{ steps.sha.outputs.value }} \
+            ${{ steps.ecr.outputs.registry }}/realworld-frontend:${{ steps.sha.outputs.value }}
+          docker push ${{ steps.ecr.outputs.registry }}/realworld-frontend:${{ steps.sha.outputs.value }}
+
+      # automated gitops update is step 8.5's job (needs a github app token, not a
+      # long-lived pat, plus loop-prevention - not built yet). update
+      # envs/dev/frontend-values.yaml in the gitops repo by hand for now.
+      - name: gitops update (deferred to step 8.5)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: echo "image pushed as realworld-frontend:${{ steps.sha.outputs.value }} - gitops auto-update not wired up yet, see step 8.5"

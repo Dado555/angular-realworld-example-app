@@ -49,6 +49,14 @@ RUN bun run build
 # re-permissioning stock nginx:alpine's root-owned paths (pid file, temp dirs).
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 
+# Refreshes Alpine packages to pick up patched libcrypto3/libssl3 etc. -- clears
+# the base image's known-CVE backlog (step 8.2's CI Trivy gate) without waiting
+# on a new base image tag. Needs root; switches back to the image's own
+# unprivileged uid (101) immediately after, before anything else runs.
+USER root
+RUN apk upgrade --no-cache
+USER 101
+
 # Full replacement of the image's default nginx.conf: adds the SPA fallback,
 # differentiated cache headers, /healthz, gzip, and security headers (see nginx.conf
 # for the reasoning behind each). Runs fine as-is under uid 101 -- /etc/nginx is

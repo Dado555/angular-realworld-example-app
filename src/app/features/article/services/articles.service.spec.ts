@@ -1,8 +1,5 @@
-import 'zone.js';
-import 'zone.js/testing';
-import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { firstValueFrom } from 'rxjs';
 import { ArticlesService } from './articles.service';
@@ -10,10 +7,6 @@ import { Article } from '../models/article.model';
 import { ArticleListConfig } from '../models/article-list-config.model';
 
 describe('ArticlesService', () => {
-  beforeAll(() => {
-    getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
-  });
-
   let service: ArticlesService;
   let httpMock: HttpTestingController;
 

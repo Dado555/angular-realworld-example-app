@@ -56,7 +56,8 @@
     "playwright": "^1.58.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.0.18",
+    "zone.js": "^0.16.2"
   },
   "lint-staged": {
     "*.{ts,html,css,json,md}": "prettier --write"

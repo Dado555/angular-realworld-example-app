@@ -1,17 +1,10 @@
-import 'zone.js';
-import 'zone.js/testing';
-import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
-import { TestBed, getTestBed } from '@angular/core/testing';
-import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { JwtService } from './jwt.service';
 
 describe('JwtService', () => {
   let service: JwtService;
   let localStorageSpy: any;
-
-  beforeAll(() => {
-    getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting());
-  });
 
   beforeEach(() => {
     // Create spy for localStorage
